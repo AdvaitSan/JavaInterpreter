@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-"# JavaInterpreter" 
-=======
-# Java-Interpreter
+# Python Interpreter in Java
 
-A lightweight Java-based interpreter that parses and executes a simple programming language. This project showcases the implementation of core interpreter components such as lexical analysis, parsing, abstract syntax tree (AST) construction, and evaluation.
+A lightweight Java-based interpreter that parses and executes a simple Python-like language. This project demonstrates how to build core interpreter components including lexical analysis, parsing, abstract syntax tree (AST) construction, and evaluation.
 
 ![canvas](https://github.com/user-attachments/assets/058e4996-adf8-4e5c-8090-e9271916e406)
 
@@ -38,13 +35,13 @@ A lightweight Java-based interpreter that parses and executes a simple programmi
 ### 🧮 Variable Declaration
 
 ```plaintext
-let <identifier> = <expression>;
+let <identifier> = <expression>
 ```
 
 **Example:**
 ```plaintext
-let x = 5;
-let name = "John";
+let x = 5
+let name = "John"
 ```
 
 ---
@@ -59,9 +56,9 @@ let name = "John";
 
 **Example:**
 ```plaintext
-let sum = 10 + 20;
-let product = x * 5;
-let result = (x + y) * 2;
+let sum = 10 + 20
+let product = x * 5
+let result = (x + y) * 2
 ```
 
 ---
@@ -69,13 +66,13 @@ let result = (x + y) * 2;
 ### 🖨️ Print Statement
 
 ```plaintext
-print(<expression>);
+print(<expression>)
 ```
 
 **Example:**
 ```plaintext
-print(x);
-print("Hello, World!");
+print(x)
+print("Hello, World!")
 ```
 
 ---
@@ -99,7 +96,7 @@ Standard precedence:
 
 **Example:**
 ```plaintext
-let result = (2 + 3) * 4;  // result = 20
+let result = (2 + 3) * 4  # result = 20
 ```
 
 ---
@@ -107,11 +104,11 @@ let result = (2 + 3) * 4;  // result = 20
 ### 📝 Sample Program
 
 ```plaintext
-let x = 10;
-let y = 20;
-let sum = x + y;
-print("Sum of x and y:");
-print(sum);
+let x = 10
+let y = 20
+let sum = x + y
+print("Sum of x and y:")
+print(sum)
 ```
 
 **Output:**
@@ -126,7 +123,7 @@ Sum of x and y:
 
 ### Prerequisites
 
-- Java Development Kit (JDK) 8 or higher.
+- Java Development Kit (JDK) 8 or higher
 
 ### Compile and Run
 
@@ -139,16 +136,22 @@ Make sure to edit `input.txt` with your program before running.
 
 ---
 
-## 🗺️ Future Plans
+## 🗺️ Roadmap
 
-Support for the following is planned in future versions:
+- [x] **Conditionals**: `if`, `else`, and comparison operators
+- [x] **Loops**: `while`, `for`, and control flow
+- [ ] **Functions**: Definition and calls with parameters
+- [ ] **Boolean Logic**: `true`, `false`, `&&`, `||`, `!`
+- [ ] **Comments**: Ignoring lines with `//`
+- [ ] **Arrays and Objects**: Composite data structures
 
-- [x] **Conditionals**: `if`, `else`, and comparison operators.
-- [x] **Loops**: `while`, `for`, and control flow.
-- [ ] **Functions**: Definition and calls with parameters.
-- [ ] **Boolean Logic**: `true`, `false`, `&&`, `||`, `!`.
-- [ ] **Comments**: Ignoring lines with `//`.
-- [ ] **Arrays and Objects**: Composite data structures..
+---
+
+## 📊 GitHub Stats
+
+![Advait's GitHub Stats](https://github-readme-stats.vercel.app/api?username=AdvaitSan&show_icons=true&theme=radical&hide=prs&count_private=true)
+
+![Streak](https://streak-stats.demolab.com/?user=AdvaitSan&theme=radical)
 
 ---
 
@@ -166,5 +169,3 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 👤 Author
 
-**[Advait Sankhe](https://github.com/AdvaitSan)**
->>>>>>> 8ffaf994e44e068b637290e7d15ce59cb958c533
