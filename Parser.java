@@ -13,7 +13,21 @@ public class Parser {
         return tokens.get(pos);
     }
 
+    private void skipNewlines() {
+        while (current().type == Token.Type.NEWLINE) {
+            pos++;
+        }
+    }
+
+    private void skipEmptyIndents() {
+        while (current().type == Token.Type.INDENT && current().value.isEmpty()) {
+            pos++;
+        }
+    }
+
     private Token consume(Token.Type type) {
+        skipEmptyIndents();
+        skipNewlines();
         if (current().type == type) {
             return tokens.get(pos++);
         }
@@ -21,6 +35,8 @@ public class Parser {
     }
 
     private boolean match(Token.Type type) {
+        skipEmptyIndents();
+        skipNewlines();
         if (current().type == type) {
             pos++;
             return true;
@@ -30,48 +46,69 @@ public class Parser {
 
     public ASTNode parse() {
         List<ASTNode> statements = new ArrayList<>();
+        skipEmptyIndents();
+        skipNewlines();
+
         while (current().type != Token.Type.EOF) {
+            if (current().type == Token.Type.EOF) break;
             statements.add(statement());
+            skipNewlines();
         }
         return new BlockNode(statements);
     }
 
     private ASTNode statement() {
+        skipEmptyIndents();
         Token tok = current();
         switch (tok.type) {
-            case LET: return letStatement();
-            case PRINT: return printStatement();
-            case IF: return ifStatement();
-            case WHILE: return whileStatement();
-            case FOR: return forStatement();
-            case FUNCTION: return functionStatement();
-            case RETURN: return returnStatement();
+            case LET:
+                return letStatement();
+            case PRINT:
+                return printStatement();
+            case IF:
+                return ifStatement();
+            case WHILE:
+                return whileStatement();
+            case FOR:
+                return forStatement();
+            case FUNCTION:
+                return functionStatement();
+            case RETURN:
+                return returnStatement();
             default:
-                if (tok.type == Token.Type.IDENT && lookAhead(1).type == Token.Type.EQ) {
+                if (tok.type == Token.Type.INDENT && !tok.value.isEmpty() && lookAhead(1).type == Token.Type.EQ) {
                     return assignStatement();
                 } else {
+                    // Expression statement - consume semicolon here
                     ASTNode expr = expression();
-                    consume(Token.Type.SEMICOLON);
+                    consumeEndOfStatement();
                     return expr;
                 }
         }
     }
 
+    private void consumeEndOfStatement() {
+        // In Python-style syntax, statements can end with newline or semicolon
+        if (current().type == Token.Type.SEMICOLON) {
+            pos++;
+        }
+        // Newlines will be skipped automatically by skipNewlines()
+    }
+
     private ASTNode letStatement() {
         consume(Token.Type.LET);
-        String name = current().value;
-        consume(Token.Type.IDENT);
+        String name = consume(Token.Type.INDENT).value;
         consume(Token.Type.EQ);
         ASTNode expr = expression();
-        consume(Token.Type.SEMICOLON);
+        consumeEndOfStatement();
         return new LetNode(name, expr);
     }
 
     private ASTNode assignStatement() {
-        String name = consume(Token.Type.IDENT).value;
+        String name = consume(Token.Type.INDENT).value;
         consume(Token.Type.EQ);
         ASTNode expr = expression();
-        consume(Token.Type.SEMICOLON);
+        consumeEndOfStatement();
         return new AssignNode(name, expr);
     }
 
@@ -80,7 +117,7 @@ public class Parser {
         consume(Token.Type.LPAREN);
         ASTNode expr = expression();
         consume(Token.Type.RPAREN);
-        consume(Token.Type.SEMICOLON);
+        consumeEndOfStatement();
         return new PrintNode(expr);
     }
 
@@ -89,10 +126,15 @@ public class Parser {
         consume(Token.Type.LPAREN);
         ASTNode cond = expression();
         consume(Token.Type.RPAREN);
-        ASTNode thenBlock = block();
+        consume(Token.Type.COLON); // Expect colon after condition
+        ASTNode thenBlock = indentedBlock();
         ASTNode elseBlock = null;
-        if (match(Token.Type.ELSE)) {
-            elseBlock = block();
+
+        skipNewlines();
+        if (current().type == Token.Type.ELSE) {
+            consume(Token.Type.ELSE);
+            consume(Token.Type.COLON);
+            elseBlock = indentedBlock();
         }
         return new IfNode(cond, thenBlock, elseBlock);
     }
@@ -102,7 +144,8 @@ public class Parser {
         consume(Token.Type.LPAREN);
         ASTNode cond = expression();
         consume(Token.Type.RPAREN);
-        ASTNode body = block();
+        consume(Token.Type.COLON); // Expect colon after condition
+        ASTNode body = indentedBlock();
         return new WhileNode(cond, body);
     }
 
@@ -113,14 +156,14 @@ public class Parser {
         ASTNode init = null;
         if (current().type != Token.Type.SEMICOLON) {
             if (current().type == Token.Type.LET) {
-                init = letStatement();  // This already consumes semicolon
+                init = letStatementWithoutEndConsume();
+            } else if (current().type == Token.Type.INDENT && !current().value.isEmpty() && lookAhead(1).type == Token.Type.EQ) {
+                init = assignStatementWithoutEndConsume();
             } else {
                 init = expression();
-                consume(Token.Type.SEMICOLON);
             }
-        } else {
-            consume(Token.Type.SEMICOLON);  // no init, just consume semicolon
         }
+        consume(Token.Type.SEMICOLON);
 
         ASTNode condition = null;
         if (current().type != Token.Type.SEMICOLON) {
@@ -133,35 +176,83 @@ public class Parser {
             update = expression();
         }
         consume(Token.Type.RPAREN);
+        consume(Token.Type.COLON); // Expect colon after for header
 
-        ASTNode body = block();
-
+        ASTNode body = indentedBlock();
         return new ForNode(init, condition, update, body);
+    }
+
+    private ASTNode letStatementWithoutEndConsume() {
+        consume(Token.Type.LET);
+        String name = consume(Token.Type.INDENT).value;
+        consume(Token.Type.EQ);
+        ASTNode expr = expression();
+        return new LetNode(name, expr);
+    }
+
+    private ASTNode assignStatementWithoutEndConsume() {
+        String name = consume(Token.Type.INDENT).value;
+        consume(Token.Type.EQ);
+        ASTNode expr = expression();
+        return new AssignNode(name, expr);
     }
 
     private ASTNode functionStatement() {
         consume(Token.Type.FUNCTION);
-        String name = consume(Token.Type.IDENT).value;
+        String name = consume(Token.Type.INDENT).value;
         consume(Token.Type.LPAREN);
         List<String> params = new ArrayList<>();
         if (current().type != Token.Type.RPAREN) {
-            params.add(consume(Token.Type.IDENT).value);
+            params.add(consume(Token.Type.INDENT).value);
             while (match(Token.Type.COMMA)) {
-                params.add(consume(Token.Type.IDENT).value);
+                params.add(consume(Token.Type.INDENT).value);
             }
         }
         consume(Token.Type.RPAREN);
-        ASTNode body = block();
+        consume(Token.Type.COLON); // Expect colon after function header
+        ASTNode body = indentedBlock();
         return new FunctionNode(name, params, body);
     }
 
     private ASTNode returnStatement() {
         consume(Token.Type.RETURN);
         ASTNode expr = expression();
-        consume(Token.Type.SEMICOLON);
+        consumeEndOfStatement();
         return new ReturnNode(expr);
     }
 
+    // New method for handling indented blocks (Python-style)
+    private ASTNode indentedBlock() {
+        skipNewlines();
+
+        // Expect an INDENT token to start the block
+        if (current().type != Token.Type.INDENT) {
+            throw new RuntimeException("Expected indented block");
+        }
+
+        List<ASTNode> stmts = new ArrayList<>();
+
+        // Keep parsing statements until we hit a DEDENT or EOF
+        while (current().type != Token.Type.DEDENT && current().type != Token.Type.EOF) {
+            // Skip any INDENT tokens that represent the indentation level
+            if (current().type == Token.Type.INDENT && current().value.isEmpty()) {
+                pos++;
+                continue;
+            }
+
+            stmts.add(statement());
+            skipNewlines();
+        }
+
+        // Consume the DEDENT token if present
+        if (current().type == Token.Type.DEDENT) {
+            pos++;
+        }
+
+        return new BlockNode(stmts);
+    }
+
+    // Keep the old block method for backward compatibility with braces
     private ASTNode block() {
         consume(Token.Type.LBRACE);
         List<ASTNode> stmts = new ArrayList<>();
@@ -172,14 +263,12 @@ public class Parser {
         return new BlockNode(stmts);
     }
 
-    // --- Expression Parsing ---
+    // --- Expression Parsing (unchanged) ---
 
-    // Top-level expression now supports assignment!
     private ASTNode expression() {
         return assignment();
     }
 
-    // Parse assignment expressions with right associativity
     private ASTNode assignment() {
         ASTNode left = logicalOr();
 
@@ -267,26 +356,33 @@ public class Parser {
     }
 
     private ASTNode primary() {
+        skipEmptyIndents();
         Token tok = current();
         switch (tok.type) {
             case NUMBER:
                 pos++;
                 return new NumberNode(Integer.parseInt(tok.value));
-            case IDENT:
+            case STRING:
                 pos++;
-                if (match(Token.Type.LPAREN)) {
-                    // function call
-                    List<ASTNode> args = new ArrayList<>();
-                    if (current().type != Token.Type.RPAREN) {
-                        args.add(expression());
-                        while (match(Token.Type.COMMA)) {
+                return new StringNode(tok.value);
+            case INDENT:
+                if (!tok.value.isEmpty()) { // Only process non-empty INDENT tokens as identifiers
+                    pos++;
+                    if (match(Token.Type.LPAREN)) {
+                        List<ASTNode> args = new ArrayList<>();
+                        if (current().type != Token.Type.RPAREN) {
                             args.add(expression());
+                            while (match(Token.Type.COMMA)) {
+                                args.add(expression());
+                            }
                         }
+                        consume(Token.Type.RPAREN);
+                        return new FunctionCallNode(tok.value, args);
                     }
-                    consume(Token.Type.RPAREN);
-                    return new FunctionCallNode(tok.value, args);
+                    return new VariableNode(tok.value);
+                } else {
+                    throw new RuntimeException("Unexpected empty indent token");
                 }
-                return new VariableNode(tok.value);
             case LPAREN:
                 consume(Token.Type.LPAREN);
                 ASTNode expr = expression();
@@ -298,6 +394,7 @@ public class Parser {
     }
 
     private boolean matchOperator(String op) {
+        skipEmptyIndents();
         if (current().type == Token.Type.OP && current().value.equals(op)) {
             pos++;
             return true;

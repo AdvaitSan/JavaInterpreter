@@ -1,9 +1,11 @@
-import java.util.List;
+import java.util.*;
 
+// === AST Node Base ===
 abstract class ASTNode {
     public abstract Object evaluate(Environment env);
 }
 
+// === Block Node ===
 class BlockNode extends ASTNode {
     public final List<ASTNode> statements;
     public BlockNode(List<ASTNode> statements) { this.statements = statements; }
@@ -17,6 +19,7 @@ class BlockNode extends ASTNode {
     }
 }
 
+// === Variable Declaration (let) ===
 class LetNode extends ASTNode {
     public final String name;
     public final ASTNode expr;
@@ -28,6 +31,7 @@ class LetNode extends ASTNode {
     }
 }
 
+// === Print Statement ===
 class PrintNode extends ASTNode {
     public final ASTNode expr;
     public PrintNode(ASTNode expr) { this.expr = expr; }
@@ -38,6 +42,7 @@ class PrintNode extends ASTNode {
     }
 }
 
+// === If Statement ===
 class IfNode extends ASTNode {
     public final ASTNode condition, thenBlock, elseBlock;
     public IfNode(ASTNode condition, ASTNode thenBlock, ASTNode elseBlock) {
@@ -60,6 +65,7 @@ class IfNode extends ASTNode {
     }
 }
 
+// === While Statement ===
 class WhileNode extends ASTNode {
     public final ASTNode condition, body;
     public WhileNode(ASTNode condition, ASTNode body) {
@@ -83,6 +89,7 @@ class WhileNode extends ASTNode {
     }
 }
 
+// === For Statement ===
 class ForNode extends ASTNode {
     public final ASTNode init, condition, update, body;
     public ForNode(ASTNode init, ASTNode condition, ASTNode update, ASTNode body) {
@@ -111,6 +118,7 @@ class ForNode extends ASTNode {
     }
 }
 
+// === Function Definition ===
 class FunctionNode extends ASTNode {
     public final String name;
     public final List<String> params;
@@ -124,6 +132,7 @@ class FunctionNode extends ASTNode {
     }
 }
 
+// === Return Statement ===
 class ReturnNode extends ASTNode {
     public final ASTNode expr;
     public ReturnNode(ASTNode expr) { this.expr = expr; }
@@ -134,6 +143,7 @@ class ReturnNode extends ASTNode {
     }
 }
 
+// === Assignment Statement ===
 class AssignNode extends ASTNode {
     public final String name;
     public final ASTNode expr;
@@ -145,6 +155,7 @@ class AssignNode extends ASTNode {
     }
 }
 
+// === Variable Reference ===
 class VariableNode extends ASTNode {
     public final String name;
     public VariableNode(String name) { this.name = name; }
@@ -153,12 +164,14 @@ class VariableNode extends ASTNode {
     }
 }
 
+// === Number Literal ===
 class NumberNode extends ASTNode {
     public final int value;
     public NumberNode(int value) { this.value = value; }
     public Object evaluate(Environment env) { return value; }
 }
 
+// === Binary Operation ===
 class BinaryOpNode extends ASTNode {
     public final ASTNode left;
     public final String op;
@@ -204,6 +217,7 @@ class BinaryOpNode extends ASTNode {
     }
 }
 
+// === Unary Operation ===
 class UnaryOpNode extends ASTNode {
     public final String op;
     public final ASTNode expr;
@@ -234,6 +248,7 @@ class UnaryOpNode extends ASTNode {
     }
 }
 
+// === Function Call ===
 class FunctionCallNode extends ASTNode {
     public final String name;
     public final List<ASTNode> args;
@@ -255,13 +270,15 @@ class FunctionCallNode extends ASTNode {
         }
         Object ret = func.body.evaluate(localEnv);
         if (localEnv.isReturnFlag()) {
+            Object returnVal = localEnv.getReturnValue();
             localEnv.setReturnFlag(false, null);
-            return localEnv.getReturnValue();
+            return returnVal;
         }
         return ret;
     }
 }
 
+// === User Function Holder ===
 class UserFunction {
     public final List<String> params;
     public final ASTNode body;
@@ -271,5 +288,20 @@ class UserFunction {
         this.params = params;
         this.body = body;
         this.env = env;
+    }
+}
+
+// === Environment for Variables and Functions ===
+
+class StringNode extends ASTNode {
+    public final String value;
+
+    public StringNode(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public Object evaluate(Environment env) {
+        return value;
     }
 }

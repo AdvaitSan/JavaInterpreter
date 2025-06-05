@@ -1,13 +1,26 @@
 public class Token {
     public enum Type {
+        // Keywords
         LET, PRINT, IF, ELSE, WHILE, FOR, FUNCTION, RETURN,
-        IDENT, NUMBER,
+
+        // Identifiers and literals
+        INDENT, NUMBER,DEDENT,NEWLINE,STRING,
+
+        // Operators (arithmetic, comparison, logical, unary)
         OP,      // +, -, *, /, ==, !=, <, >, <=, >=, &&, ||, !
+
+        // Assignment operator
         EQ,      // =
+
+        // Parentheses and braces
         LPAREN, RPAREN,
         LBRACE, RBRACE,
-        COMMA,
+
+        // Separators
+        COMMA,COLON,
         SEMICOLON,
+
+        // End of file/input
         EOF
     }
 
