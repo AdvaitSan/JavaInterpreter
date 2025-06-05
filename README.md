@@ -116,9 +116,17 @@ print(sum)
 Sum of x and y:
 30
 ```
+## ⚡ Performance Benchmark
+
+| Method                   | Time (Approx) |
+|--------------------------|---------------|
+| Python-Java interpreted (V1) | ~371 ms ✅     |
+| Native Java loop         | ~50–150 ms    |
+| Python loop              | ~200–600 ms   |
+| Node.js (console.log)    | ~150–500 ms   |
+
 
 ---
-
 ## 🛠️ Getting Started
 
 ### Prerequisites
@@ -145,13 +153,6 @@ Make sure to edit `input.txt` with your program before running.
 - [ ] **Comments**: Ignoring lines with `//`
 - [ ] **Arrays and Objects**: Composite data structures
 
----
-
-## 📊 GitHub Stats
-
-![Advait's GitHub Stats](https://github-readme-stats.vercel.app/api?username=AdvaitSan&show_icons=true&theme=radical&hide=prs&count_private=true)
-
-![Streak](https://streak-stats.demolab.com/?user=AdvaitSan&theme=radical)
 
 ---
 
@@ -168,4 +169,5 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 ## 👤 Author
+**[Advait Sankhe](https://github.com/AdvaitSan)**
 
