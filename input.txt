@@ -1,4 +1,25 @@
-for (let i = 1; i <= 10000; i = i + 1):
-    print(i)
+function factorial(n):
+    if (n <= 1):
+        return 1
+    return n * factorial(n - 1)
 
+let result = factorial(5)
+print("Factorial of 5 is:")
+print(result)
 
+print("Built-in str(): " + str(result))
+print("Built-in abs():")
+print(abs(-42))
+print("Built-in max():")
+print(max(10, 20))
+print("Built-in len():")
+print(len("hello"))
+
+function crash():
+    return fakeFunc()
+
+function main():
+    crash()
+
+print("Now testing call stack error...")
+main()

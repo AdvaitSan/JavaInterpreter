@@ -186,7 +186,11 @@ class BinaryOpNode extends ASTNode {
         Object rightVal = right.evaluate(env);
 
         switch (op) {
-            case "+": return toNumber(leftVal) + toNumber(rightVal);
+            case "+": 
+                if (leftVal instanceof String || rightVal instanceof String) {
+                    return String.valueOf(leftVal) + String.valueOf(rightVal);
+                }
+                return toNumber(leftVal) + toNumber(rightVal);
             case "-": return toNumber(leftVal) - toNumber(rightVal);
             case "*": return toNumber(leftVal) * toNumber(rightVal);
             case "/": return toNumber(leftVal) / toNumber(rightVal);
@@ -258,23 +262,55 @@ class FunctionCallNode extends ASTNode {
     }
 
     public Object evaluate(Environment env) {
-        UserFunction func = env.getFunction(name);
-        if (func == null) throw new RuntimeException("Function not found: " + name);
-        if (args.size() != func.params.size())
-            throw new RuntimeException("Function " + name + " expects " + func.params.size() + " arguments, got " + args.size());
+        // Evaluate all arguments first (in the calling environment)
+        List<Object> argValues = new java.util.ArrayList<>();
+        for (ASTNode arg : args) {
+            argValues.add(arg.evaluate(env));
+        }
 
-        Environment localEnv = new Environment(func.env);
-        for (int i = 0; i < args.size(); i++) {
-            Object argVal = args.get(i).evaluate(env);
-            localEnv.define(func.params.get(i), argVal);
+        // Push a frame onto the call stack before entering the function body (or checking if it exists)
+        // so that if it doesn't exist, the error trace shows the caller
+        CallStack callStack = env.getCallStack();
+        callStack.push(name, argValues);
+
+        try {
+            // === Check built-in functions first ===
+            BuiltinFunction builtin = env.getBuiltin(name);
+            if (builtin != null) {
+                return builtin.call(argValues);
+            }
+
+            // === Then check user-defined functions ===
+            UserFunction func = env.getFunction(name);
+            if (func == null) throw new RuntimeException("Function not found: " + name);
+            if (argValues.size() != func.params.size())
+                throw new RuntimeException("Function " + name + " expects " + func.params.size() + " arguments, got " + argValues.size());
+
+            // Create a local environment for this call, scoped to the function's closure
+            Environment localEnv = new Environment(func.env);
+            for (int i = 0; i < argValues.size(); i++) {
+                localEnv.define(func.params.get(i), argValues.get(i));
+            }
+
+            Object ret = func.body.evaluate(localEnv);
+            if (localEnv.isReturnFlag()) {
+                Object returnVal = localEnv.getReturnValue();
+                localEnv.setReturnFlag(false, null);
+                return returnVal;
+            }
+            return ret;
+
+        } catch (RuntimeException e) {
+            // If an error hasn't been decorated with a stack trace yet, decorate it and re-throw
+            // We avoid decorating multiple times if the exception propagates up multiple calls
+            if (!e.getMessage().contains("Call stack (most recent call first):")) {
+                throw new RuntimeException(e.getMessage() + "\n\nCall stack (most recent call first):\n" + callStack.formatTrace(), e);
+            }
+            throw e;
+        } finally {
+            // Always pop the frame so the stack remains balanced
+            callStack.pop();
         }
-        Object ret = func.body.evaluate(localEnv);
-        if (localEnv.isReturnFlag()) {
-            Object returnVal = localEnv.getReturnValue();
-            localEnv.setReturnFlag(false, null);
-            return returnVal;
-        }
-        return ret;
     }
 }
 

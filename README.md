@@ -13,6 +13,8 @@ A lightweight Java-based interpreter that parses and executes a simple Python-li
 - **AST**: Represents the syntactic structure of the code.
 - **Interpreter**: Evaluates the AST within an environment that maintains variable bindings.
 - **Environment**: Stores and manages variable scopes and values.
+- **Call Stack**: Safe execution, recursion limiting, and error backtracing.
+- **Built-in Functions**: Standard functions like `str()`, `len()`, `abs()`, etc.
 - **Input Support**: Reads source code from `input.txt` for interpretation.
 
 ---
@@ -24,6 +26,8 @@ A lightweight Java-based interpreter that parses and executes a simple Python-li
 - `AST.java`: Defines node types of the AST.
 - `Interpreter.java`: Core evaluator of AST nodes.
 - `Environment.java`: Manages variable bindings.
+- `CallStack.java`: Tracks active stack frames and provides stack traces.
+- `BuiltinsRegistry.java`: Registration of standard system functions.
 - `Token.java`: Token definitions and types.
 - `Main.java`: Entry point of the interpreter.
 - `input.txt`: Input file containing the source code to interpret.
@@ -144,12 +148,65 @@ Make sure to edit `input.txt` with your program before running.
 
 ---
 
+## 🏗️ Architecture
+
+```mermaid
+classDiagram
+    class Main {
+        +main(args)
+    }
+    class Lexer {
+        -String input
+        +tokenize() List~Token~
+    }
+    class Parser {
+        -List~Token~ tokens
+        +parse() ASTNode
+    }
+    class Interpreter {
+        +execute(ASTNode)
+    }
+    class Environment {
+        -Environment parent
+        -CallStack callStack
+        +define(name, value)
+        +get(name) Object
+        +defineFunction(name, func)
+        +defineBuiltin(name, func)
+    }
+    class CallStack {
+        -Stack~StackFrame~ frames
+        +push(name, args)
+        +pop()
+        +formatTrace() String
+    }
+    class BuiltinsRegistry {
+        +register(Environment)
+    }
+    class ASTNode {
+        <<abstract>>
+        +evaluate(Environment) Object
+    }
+    
+    Main "1" --> "1" Lexer : creates
+    Main "1" --> "1" Parser : creates
+    Main "1" --> "1" Interpreter : creates
+    Parser "1" --> "*" ASTNode : generates
+    Interpreter "1" --> "1" Environment : creates
+    Interpreter "1" --> "1" BuiltinsRegistry : configures
+    Environment "1" *-- "1" CallStack : owns
+    ASTNode "*" ..> "1" Environment : accesses
+```
+
+---
+
 ## 🗺️ Roadmap
 
 - [x] **Conditionals**: `if`, `else`, and comparison operators
 - [x] **Loops**: `while`, `for`, and control flow
-- [ ] **Functions**: Definition and calls with parameters
-- [ ] **Boolean Logic**: `true`, `false`, `&&`, `||`, `!`
+- [x] **Functions**: Definition and calls with parameters
+- [x] **Call Stack**: Stack traces and recursion limits
+- [x] **Boolean Logic**: `true`, `false`, `&&`, `||`, `!`
 - [ ] **Comments**: Ignoring lines with `//`
 - [ ] **Arrays and Objects**: Composite data structures
 

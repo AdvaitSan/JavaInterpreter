@@ -5,18 +5,31 @@ public class Environment {
     private final Environment parent;
     private final Map<String, Object> variables = new HashMap<>();
     private final Map<String, UserFunction> functions = new HashMap<>();
+    private final Map<String, BuiltinFunction> builtins = new HashMap<>();
 
     private boolean returnFlag = false;
     private Object returnValue = null;
 
-    // Root environment constructor
+    // Shared call stack — all environments in the same program share one stack.
+    private final CallStack callStack;
+
+    // === Root environment constructor ===
+    // Creates a fresh call stack for a new program run.
     public Environment() {
-        this(null);
+        this.parent = null;
+        this.callStack = new CallStack();
     }
 
-    // Nested environment constructor (for scopes)
+    // === Nested environment constructor (for scopes) ===
+    // Inherits the parent's call stack so the whole program shares one.
     public Environment(Environment parent) {
         this.parent = parent;
+        this.callStack = parent.callStack;
+    }
+
+    // === Get the shared call stack ===
+    public CallStack getCallStack() {
+        return callStack;
     }
 
     /**
@@ -59,7 +72,6 @@ public class Environment {
         throw new RuntimeException("Variable not defined: " + name);
     }
 
-
     /**
      * Check if variable is defined in current scope or any parent.
      */
@@ -71,14 +83,14 @@ public class Environment {
     }
 
     /**
-     * Define a function in the current environment scope.
+     * Define a user-defined function in the current environment scope.
      */
     public void defineFunction(String name, UserFunction func) {
         functions.put(name, func);
     }
 
     /**
-     * Get a function by name. Searches up the scope chain.
+     * Get a user-defined function by name. Searches up the scope chain.
      * Returns null if not found.
      */
     public UserFunction getFunction(String name) {
@@ -87,6 +99,27 @@ public class Environment {
         }
         if (parent != null) {
             return parent.getFunction(name);
+        }
+        return null;
+    }
+
+    /**
+     * Register a built-in function in this environment.
+     */
+    public void defineBuiltin(String name, BuiltinFunction func) {
+        builtins.put(name, func);
+    }
+
+    /**
+     * Get a built-in function by name. Searches up the scope chain.
+     * Returns null if not found.
+     */
+    public BuiltinFunction getBuiltin(String name) {
+        if (builtins.containsKey(name)) {
+            return builtins.get(name);
+        }
+        if (parent != null) {
+            return parent.getBuiltin(name);
         }
         return null;
     }

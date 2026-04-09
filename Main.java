@@ -6,16 +6,17 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+        // Read source code from input.txt
         Path path = Paths.get("input.txt");
         String code = "";
         try {
             code = Files.readString(path);
         } catch (IOException e) {
             System.err.println("Failed to read input.txt: " + e.getMessage());
-            e.printStackTrace();
             return;
         }
 
+        // Lex → tokens
         Lexer lexer = new Lexer(code);
         List<Token> tokens = lexer.tokenize();
 
@@ -27,15 +28,12 @@ public class Main {
 //         }
 //         System.out.println();
 
-        try {
-            Parser parser = new Parser(tokens);
-            ASTNode program = parser.parse();
+        // Parse → AST
+        Parser parser = new Parser(tokens);
+        ASTNode program = parser.parse();
 
-            Environment globalEnv = new Environment();
-            program.evaluate(globalEnv);
-        } catch (RuntimeException e) {
-            System.err.println("Parser error: " + e.getMessage());
-            e.printStackTrace();
-        }
+        // Interpret — errors are caught and reported inside Interpreter
+        Interpreter interpreter = new Interpreter();
+        interpreter.execute(program);
     }
 }
