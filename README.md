@@ -2,7 +2,14 @@
 
 A lightweight Java-based interpreter that parses and executes a simple Python-like language. This project demonstrates how to build core interpreter components including lexical analysis, parsing, abstract syntax tree (AST) construction, and evaluation.
 
+***🛠️ Entire workflow design of this project is done without AI by me(Advait), so there may be some issues. If found, please report! 🐛 Just a hobby project, built for fun! 🎉***
+
+### General Workflow
+
 ![canvas](https://github.com/user-attachments/assets/058e4996-adf8-4e5c-8090-e9271916e406)
+
+### Technical Calls
+![canvas](https://github.com/user-attachments/assets/ad066263-f31e-49a7-aeb5-5c31a198bc59)
 
 ---
 
@@ -122,12 +129,14 @@ Sum of x and y:
 ```
 ## ⚡ Performance Benchmark
 
-| Method                   | Time (Approx) |
-|--------------------------|---------------|
-| Python-Java interpreted (V1) | ~371 ms ✅     |
-| Native Java loop         | ~50–150 ms    |
-| Python loop              | ~200–600 ms   |
-| Node.js (console.log)    | ~150–500 ms   |
+We compared integer counting and recursive function invocations (`factorial(10)` run 100,000 times) against established engines.
+
+| Engine / Implementation  | Simple Loop (V1) | Factorial Recursion (100k) |
+|--------------------------|------------------|----------------------------|
+| **Native Java loop**     | ~50–150 ms       | ~23 ms                     |
+| **Python 3**             | ~200–600 ms      | ~141 ms                    |
+| **Node.js (JS)**         | ~150–500 ms      | ~152 ms                    |
+| **JavaInterpreter**      | ~371 ms ✅        | ~891 ms ✅                  |
 
 
 ---
