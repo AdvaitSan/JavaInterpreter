@@ -1,0 +1,16 @@
+function taskA(limit):
+    let i = 0
+    while (i < limit):
+        print("Task A step " + str(i))
+        i = i + 1
+
+function taskB(limit):
+    let i = 0
+    while (i < limit):
+        print("Task B step " + str(i))
+        i = i + 1
+
+spawn("taskA", 3)
+spawn("taskB", 3)
+
+print("Main task finished sending spawns!")

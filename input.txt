@@ -3,23 +3,28 @@ function factorial(n):
         return 1
     return n * factorial(n - 1)
 
-let result = factorial(5)
-print("Factorial of 5 is:")
-print(result)
+let total = 0
+for (let i = 0; i < 100000; i = i + 1):
+    total = total + factorial(10)
 
-print("Built-in str(): " + str(result))
-print("Built-in abs():")
-print(abs(-42))
-print("Built-in max():")
-print(max(10, 20))
-print("Built-in len():")
-print(len("hello"))
+print("Factorial(10) calculated 100,000 times!")
+print("Final verification sum:")
+print(total)
 
-function crash():
-    return fakeFunc()
 
-function main():
-    crash()
+function taskA(limit):
+    let i = 0
+    while (i < limit):
+        print("Task c step " + str(i))
+        i = i + 1
 
-print("Now testing call stack error...")
-main()
+function taskB(limit):
+    let i = 0
+    while (i < limit):
+        print("Task B step " + str(i))
+        i = i + 1
+
+spawn("taskA", 3)
+spawn("taskB", 3)
+
+print("Main task finished sending spawns!")

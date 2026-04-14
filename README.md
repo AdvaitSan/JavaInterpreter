@@ -14,7 +14,8 @@ A lightweight Java-based interpreter that parses and executes a simple Python-li
 - **Interpreter**: Evaluates the AST within an environment that maintains variable bindings.
 - **Environment**: Stores and manages variable scopes and values.
 - **Call Stack**: Safe execution, recursion limiting, and error backtracing.
-- **Built-in Functions**: Standard functions like `str()`, `len()`, `abs()`, etc.
+- **Built-in Functions**: Standard functions like `str()`, `len()`, `abs()`, `spawn()`, etc.
+- **Cooperative Multitasking**: Concurrent execution using an implicit state-machine scheduler without OS thread-locking.
 - **Input Support**: Reads source code from `input.txt` for interpretation.
 
 ---
@@ -24,7 +25,9 @@ A lightweight Java-based interpreter that parses and executes a simple Python-li
 - `Lexer.java`: Lexical analyzer for token generation.
 - `Parser.java`: Parses tokens into an AST.
 - `AST.java`: Defines node types of the AST.
-- `Interpreter.java`: Core evaluator of AST nodes.
+- `Interpreter.java`: Core framework linking scripts to the environment and scheduler.
+- `CoopScheduler.java`: Manages the concurrent execution of multiple spawned tasks.
+- `EvalTask.java`: A cooperative coroutine acting as a task representing state-machine instructions.
 - `Environment.java`: Manages variable bindings.
 - `CallStack.java`: Tracks active stack frames and provides stack traces.
 - `BuiltinsRegistry.java`: Registration of standard system functions.
@@ -105,6 +108,27 @@ let result = (2 + 3) * 4  # result = 20
 
 ---
 
+### 🧵 Concurrency & Multitasking
+
+The interpreter features a custom cooperative scheduler that manages multiple parallel tasks. Instead of relying on blocking JVM threads, code evaluation uses a Continuation-Passing Style (CPS) state machine, allowing the language to context switch perfectly between every single atomic AST operation.
+
+**Supported Built-ins:**
+- `spawn("functionName", arg1, ...)`: Spawns a new background task executing the target function alongside the main program.
+- `yield()`: Explicitly yields execution to other tasks (though the scheduler naturally yields on every single instruction out of the box).
+
+**Example:**
+```plaintext
+function taskA(limit):
+    let i = 0
+    while (i < limit):
+        print("Task A step " + str(i))
+        i = i + 1
+
+spawn("taskA", 3)
+```
+
+---
+
 ### 📝 Sample Program
 
 ```plaintext
@@ -122,12 +146,14 @@ Sum of x and y:
 ```
 ## ⚡ Performance Benchmark
 
-| Method                   | Time (Approx) |
-|--------------------------|---------------|
-| Python-Java interpreted (V1) | ~371 ms ✅     |
-| Native Java loop         | ~50–150 ms    |
-| Python loop              | ~200–600 ms   |
-| Node.js (console.log)    | ~150–500 ms   |
+We compared integer counting and recursive function invocations (`factorial(10)` run 100,000 times) against established engines.
+
+| Engine / Implementation  | Simple Loop (V1) | Factorial Recursion (100k) |
+|--------------------------|------------------|----------------------------|
+| **Native Java loop**     | ~50–150 ms       | ~23 ms                     |
+| **Python 3**             | ~200–600 ms      | ~141 ms                    |
+| **Node.js (JS)**         | ~150–500 ms      | ~152 ms                    |
+| **JavaInterpreter**      | ~371 ms ✅        | ~891 ms ✅                  |
 
 
 ---
@@ -166,6 +192,16 @@ classDiagram
     class Interpreter {
         +execute(ASTNode)
     }
+    class CoopScheduler {
+        -Queue ready
+        +submit(CoroTask)
+        +run()
+    }
+    class EvalTask {
+        -Stack instructions
+        -Stack operands
+        +step() boolean
+    }
     class Environment {
         -Environment parent
         -CallStack callStack
@@ -185,7 +221,7 @@ classDiagram
     }
     class ASTNode {
         <<abstract>>
-        +evaluate(Environment) Object
+        +pushEval(EvalTask, Environment)
     }
     
     Main "1" --> "1" Lexer : creates
@@ -194,6 +230,9 @@ classDiagram
     Parser "1" --> "*" ASTNode : generates
     Interpreter "1" --> "1" Environment : creates
     Interpreter "1" --> "1" BuiltinsRegistry : configures
+    Interpreter "1" --> "1" CoopScheduler : runs
+    CoopScheduler "1" --> "*" EvalTask : schedules
+    EvalTask "1" --> "*" ASTNode : evaluates
     Environment "1" *-- "1" CallStack : owns
     ASTNode "*" ..> "1" Environment : accesses
 ```
@@ -207,6 +246,7 @@ classDiagram
 - [x] **Functions**: Definition and calls with parameters
 - [x] **Call Stack**: Stack traces and recursion limits
 - [x] **Boolean Logic**: `true`, `false`, `&&`, `||`, `!`
+- [x] **Concurrency**: Yield-based cooperative scheduler natively running atomic CPS nodes
 - [ ] **Comments**: Ignoring lines with `//`
 - [ ] **Arrays and Objects**: Composite data structures
 

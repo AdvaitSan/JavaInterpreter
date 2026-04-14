@@ -1,21 +1,43 @@
 import java.util.List;
+import java.util.ArrayList;
 
-// === Interpreter ===
-// The central executor. Creates the environment, registers built-ins,
-// runs the program, and prints a call stack trace on errors.
 public class Interpreter {
-
     public void execute(ASTNode program) {
-        // Root environment — this also creates the shared CallStack
         Environment env = new Environment();
-
-        // Register all built-in functions (len, str, abs, etc.)
         BuiltinsRegistry.register(env);
+        
+        CoopScheduler scheduler = new CoopScheduler();
+
+        env.defineBuiltin("spawn", args -> {
+            if (args.isEmpty()) throw new RuntimeException("spawn expects at least 1 argument (function name)");
+            String funcName = String.valueOf(args.get(0));
+            
+            List<ASTNode> callArgs = new ArrayList<>();
+            for (int i = 1; i < args.size(); i++) {
+                final Object val = args.get(i);
+                callArgs.add(new ASTNode() {
+                    public void pushEval(EvalTask task, Environment loopEnv) {
+                        task.push(t -> t.operands.push(val));
+                    }
+                });
+            }
+            
+            ASTNode callNative = new FunctionCallNode(funcName, callArgs);
+            EvalTask newTask = new EvalTask(callNative, env);
+            scheduler.submit(newTask);
+            return null;
+        });
+
+        env.defineBuiltin("yield", args -> {
+            return null;
+        });
+
+        EvalTask mainTask = new EvalTask(program, env);
+        scheduler.submit(mainTask);
 
         try {
-            program.evaluate(env);
+            scheduler.run();
         } catch (RuntimeException e) {
-            // Print the error message (which now includes the call stack trace)
             System.err.println("Runtime error: " + e.getMessage());
         }
     }
